@@ -1,0 +1,11 @@
+.DS_Store
+*.o
+*.mod
+*.c
+*.so
+*.pyf
+*.csv
+ReadMe.txt
+__pycache__
+src/build/
+build/
