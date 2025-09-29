@@ -9,7 +9,7 @@ The included loss-functions for the pairwise kernel problem are:
 * epsilon-insensitive absolute loss,
 * absolute loss.
 
-Note that only epsilon-intensive squared loss is tested for functionality.
+Note that only the epsilon-insensitive squared loss has been tested for functionality.
 
 ## Files included
     
@@ -22,9 +22,9 @@ Note that only epsilon-intensive squared loss is tested for functionality.
 * slmba.f95             
   - StoLMBM - a stochastic limited memory bundle method for nonsmooth optimization (specially developed for SPaiK).
 * objfun.f95            
-  - computation of the function and subgradients values with different loss functions. Selection between loss functions is made in spaik.py. In addition, includes sGVT.
+  - Computation of the function and subgradients values with different loss functions. Selection between loss functions is made in spaik.py. Includes sGVT.
 * initpkl.f95           
-  - initialization of parameters and variables for SPaiK and StoLMBM. Includes modules:
+  - Initialization of parameters and variables for SPaiK and StoLMBM. Includes modules:
     + initpkl - Initialization of parameters for SPaiK.
     + initslmba - Initialization of StoLMBM.
 * parameters.f95
@@ -32,13 +32,13 @@ Note that only epsilon-intensive squared loss is tested for functionality.
     + r_precision - Precision for reals,
     + param - Parameters.
 * subpro.f95            
-  - subprograms for StoLMBM.
+  - Subprograms for StoLMBM.
 * data.py
   - Contains functions to load the example datasets in SPaiK. The data files are assumed to be located in a folder "data". This repository does not include the datasets themselves; they can be obtained from the repositories listed in the References section.
   - Contains functions to create train-test-validation splits. Splits are created for every experimental setting S1-S4 (see the references below).
 
 * Makefile              
-  - makefile: builds a shared library to allow StoLMBM (Fortran95 code) to be called from Python program SPaiK. Uses f2py, Python3.7, and requires a Fortran compiler (gfortran) to be installed.
+  - makefile: Builds a shared library to allow StoLMBM (Fortran95 code) to be called from Python program SPaiK. Uses f2py, Python3.7, and requires a Fortran compiler (gfortran) to be installed.
 
 
 
@@ -70,8 +70,7 @@ In addition, separate csv-files with predictions under different experimental se
 * Generalized vec trick, experimental settings, and performance measures:
   - A. Airola, T. Pahikkala, "[Fast kronecker product kernel methods via generalized vec trick](https://ieeexplore.ieee.org/document/7999226)", IEEE Transactions on Neural Networks and Learning Systems, Vol. 29, pp. 3374–3387, 2018.
   - M. Viljanen, A. Airola, T. Pahikkala, "[Generalized vec trick for fast learning of pairwise kernel models](https://link.springer.com/article/10.1007/s10994-021-06127-y)", Machine Learning, Vol. 111, 543–573, 2022.
-  - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, Interac-
-tion concordance index: Performance evaluation for interaction prediction methods, 2025.
+  - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, Interaction concordance index: Performance evaluation for interaction prediction methods, 2025.
 (Includes information about the data)
 * Nonsmooth optimization:
   - A. Bagirov, N. Karmitsa, M.M. Mäkelä, "[Introduction to nonsmooth optimization: theory, practice and software](https://link.springer.com/book/10.1007/978-3-319-08114-4)", Springer, 2014.
@@ -79,7 +78,7 @@ tion concordance index: Performance evaluation for interaction prediction method
   - The datasets used with SPaiK in its original publication can be obtained from the following sources:
     + [Davis and Metz](https://staff.cs.utu.fi/~aatapa/data/DrugTarget/)
     + [KIBA](https://github.com/hkmztrk/DeepDTA/tree/master/data/kiba)
-    + [Merget]()
+    + [Merget](https://staff.cs.utu.fi/~aatapa/data/Merget_et_al_2017/)
     + [GPCR, Ion Channels, and Enzymes](http://web.kuicr.kyoto-u.ac.jp/supp/yoshi/drugtarget/)
 
 ## Acknowledgements
