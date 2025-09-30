@@ -67,13 +67,14 @@ In addition, separate csv-files with predictions under different experimental se
   - N. Karmitsa, V.-P. Eronen, M.M. Mäkelä, T. Pahikkala, A. Airola, 
        "[Stochastic limited memory bundle algorithm for clustering in big data](https://www.sciencedirect.com/science/article/pii/S0031320325003140?via%3Dihub)", 
        Pattern Recognition, Vol 165, 111654, 2025. (A different version of the Stochastic LMBM).
-* Generalized vec trick, experimental settings, and performance measures:
+* Generalized vec trick and experimental settings:
   - A. Airola, T. Pahikkala, "[Fast kronecker product kernel methods via generalized vec trick](https://ieeexplore.ieee.org/document/7999226)", IEEE Transactions on Neural Networks and Learning Systems, Vol. 29, pp. 3374–3387, 2018.
   - M. Viljanen, A. Airola, T. Pahikkala, "[Generalized vec trick for fast learning of pairwise kernel models](https://link.springer.com/article/10.1007/s10994-021-06127-y)", Machine Learning, Vol. 111, 543–573, 2022.
-  - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, Interaction concordance index: Performance evaluation for interaction prediction methods, 2025.
-(Includes information about the data)
 * Nonsmooth optimization:
   - A. Bagirov, N. Karmitsa, M.M. Mäkelä, "[Introduction to nonsmooth optimization: theory, practice and software](https://link.springer.com/book/10.1007/978-3-319-08114-4)", Springer, 2014.
+* [Interaction-Concordance-Index](https://github.com/TurkuML/Interaction-Concordance-Index)
+  - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, Interaction concordance index: Performance evaluation for interaction prediction methods, 2025.
+(Includes information about the data)
 * Experimental data:
   - The datasets used with SPaiK in its original publication can be obtained from the following sources:
     + [Davis and Metz](https://staff.cs.utu.fi/~aatapa/data/DrugTarget/)
