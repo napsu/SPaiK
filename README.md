@@ -34,7 +34,9 @@ Note that only the epsilon-insensitive squared loss has been tested for function
 * subpro.f95            
   - Subprograms for StoLMBM.
 * data.py
-  - Contains functions to load the example datasets in SPaiK. The data files are assumed to be located in a folder "data". This repository does not include the datasets themselves; they can be obtained from the repositories listed in the References section.
+  - Contains functions to load the example datasets in SPaiK. The data files are assumed to be located in a folder "data". This repository does not include the datasets themselves; links to all example datasets are provided
+in repository [github.com/TurkuML](https://github.com/TurkuML/IC-index-experiments).
+
   - Contains functions to create train-test-validation splits. Splits are created for every experimental setting S1-S4 (see the references below).
 
 * Makefile              
@@ -75,12 +77,6 @@ In addition, separate csv-files with predictions under different experimental se
 * [Interaction-Concordance-Index](https://github.com/TurkuML/Interaction-Concordance-Index)
   - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, Interaction concordance index: Performance evaluation for interaction prediction methods, 2025.
 (Includes information about the data)
-* Experimental data:
-  - The datasets used with SPaiK in its original publication can be obtained from the following sources:
-    + [Davis and Metz](https://staff.cs.utu.fi/~aatapa/data/DrugTarget/)
-    + [KIBA](https://github.com/hkmztrk/DeepDTA/tree/master/data/kiba)
-    + [Merget](https://staff.cs.utu.fi/~aatapa/data/Merget_et_al_2017/)
-    + [GPCR, Ion Channels, and Enzymes](http://web.kuicr.kyoto-u.ac.jp/supp/yoshi/drugtarget/)
 
 ## Acknowledgements
 The work was financially supported by the Research Council of Finland, Project No. #340182 and
