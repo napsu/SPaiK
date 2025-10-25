@@ -74,9 +74,9 @@ In addition, separate csv-files with predictions under different experimental se
   - M. Viljanen, A. Airola, T. Pahikkala, "[Generalized Vec Trick for Fast Learning of Pairwise Kernel Models](https://link.springer.com/article/10.1007/s10994-021-06127-y)", Machine Learning, Vol. 111, 543–573, 2022.
 * Nonsmooth optimization:
   - A. Bagirov, N. Karmitsa, M.M. Mäkelä, "[Introduction to Nonsmooth Optimization: Theory, Practice and Software](https://link.springer.com/book/10.1007/978-3-319-08114-4)", Springer , 2014.
-* [Interaction-Concordance-Index](https://github.com/TurkuML/Interaction-Concordance-Index) and  and experimental settings:
+* [Interaction-Concordance-Index](https://github.com/TurkuML/Interaction-Concordance-Index), data, and experimental settings:
   - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, "[Interaction Concordance Index: Performance Evaluation for Interaction Prediction Methods](https://arxiv.org/abs/2510.14419), 2025.
-(Includes information about the data)
+
 
 ## Acknowledgements
 The work was financially supported by the Research Council of Finland, Project No. #340182 and
