@@ -37,7 +37,7 @@ Note that only the epsilon-insensitive squared loss has been tested for function
   - Contains functions to load the example datasets in SPaiK. The data files are assumed to be located in a folder "data". This repository does not include the datasets themselves; links to all example datasets are provided
 in repository [github.com/TurkuML](https://github.com/TurkuML/IC-index-experiments).
 
-  - Contains functions to create train-test-validation splits. Splits are created for every experimental setting S1-S4 (see the references below).
+  - Contains functions to create train-test-validation splits. Splits are created for every experimental setting IDIT, IDOT, ODIT, and ODOT (see the references below).
 
 * Makefile              
   - makefile: Builds a shared library to allow StoLMBM (Fortran95 code) to be called from Python program SPaiK. Uses f2py, Python3.7, and requires a Fortran compiler (gfortran) to be installed.
@@ -53,8 +53,8 @@ To use the code:
 3) Finally, just type "python3.7 spaik.py".
 
 
-The algorithm returns a csv-file with performance measures (C-index, IC-index, and MSE) computed in the test set under different experimental settings S1-S4. The best results are selected using a separate validation set and validated w.r.t. C-index.
-In addition, separate csv-files with predictions under different experimental settings S1-S4 are returned. 
+The algorithm returns a csv-file with performance measures (C-index, IC-index, and MSE) computed in the test set under different experimental settings IDIT, IDOT, ODIT, and ODOT. The best results are selected using a separate validation set and validated w.r.t. C-index.
+In addition, separate csv-files with predictions under different experimental settings are returned. 
 
 ## References:
 
@@ -69,12 +69,12 @@ In addition, separate csv-files with predictions under different experimental se
   - N. Karmitsa, V.-P. Eronen, M.M. Mäkelä, T. Pahikkala, A. Airola, 
        "[Stochastic Limited Memory Bundle Algorithm for Clustering in Big Data](https://www.sciencedirect.com/science/article/pii/S0031320325003140?via%3Dihub)", 
        Pattern Recognition, Vol 165, 111654, 2025. (A different version of the Stochastic LMBM).
-* Generalized vec trick and experimental settings:
+* Generalized vec trick:
   - A. Airola, T. Pahikkala, "[Fast Kronecker Product Kernel Methods via Generalized Vec Trick](https://ieeexplore.ieee.org/document/7999226)", IEEE Transactions on Neural Networks and Learning Systems, Vol. 29, pp. 3374–3387, 2018.
   - M. Viljanen, A. Airola, T. Pahikkala, "[Generalized Vec Trick for Fast Learning of Pairwise Kernel Models](https://link.springer.com/article/10.1007/s10994-021-06127-y)", Machine Learning, Vol. 111, 543–573, 2022.
 * Nonsmooth optimization:
   - A. Bagirov, N. Karmitsa, M.M. Mäkelä, "[Introduction to Nonsmooth Optimization: Theory, Practice and Software](https://link.springer.com/book/10.1007/978-3-319-08114-4)", Springer , 2014.
-* [Interaction-Concordance-Index](https://github.com/TurkuML/Interaction-Concordance-Index)
+* [Interaction-Concordance-Index](https://github.com/TurkuML/Interaction-Concordance-Index) and  and experimental settings:
   - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, "[Interaction Concordance Index: Performance Evaluation for Interaction Prediction Methods](https://arxiv.org/abs/2510.14419), 2025.
 (Includes information about the data)
 
