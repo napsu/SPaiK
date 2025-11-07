@@ -75,7 +75,7 @@ In addition, separate csv-files with predictions under different experimental se
 * Nonsmooth optimization:
   - A. Bagirov, N. Karmitsa, M.M. Mäkelä, "[Introduction to Nonsmooth Optimization: Theory, Practice and Software](https://link.springer.com/book/10.1007/978-3-319-08114-4)", Springer , 2014.
 * [Interaction-Concordance-Index](https://github.com/TurkuML/Interaction-Concordance-Index), data, and experimental settings:
-  - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, "[Interaction Concordance Index: Performance Evaluation for Interaction Prediction Methods](https://arxiv.org/abs/2510.14419), 2025.
+  - T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, "[Interaction Concordance Index: Performance Evaluation for Interaction Prediction Methods](https://arxiv.org/abs/2510.14419)", ArXiv2510.14419, 2025.
 
 
 ## Acknowledgements

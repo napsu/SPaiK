@@ -191,8 +191,8 @@ CONTAINS
         if (nbatch == m) then ! 
             maxbatch = 1          ! Number of different batches
 !            nth      = 500
-!            nth      = 100
-            nth      = 1000
+            !nth      = 100 
+            nth      = 1000 
         else if (nbatch == m-1) then
             maxbatch = 2
             nth      = 500
@@ -215,7 +215,7 @@ CONTAINS
             maxbatch = 21
 !            nth      = 25
 !            nth      = 15
-            nth      = 50
+            nth      = 50 
         else
             maxbatch = m / nbatch + 1
             if (maxbatch < 2) maxbatch = 2

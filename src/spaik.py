@@ -3,11 +3,11 @@
 Main program for
 
 SPaiK   - Scalable Pairwise Kernel Learning Software using stochastic 
-limited memory bundle algorithm (SLMBA), stochastic generalized vec 
+limited memory bundle method (StoLMBM), stochastic generalized vec 
 trick (sGVT), and kernels from RLScore.  
                                                                        
 The work was financially supported by the Research Council of Finland 
-(Project No. #345804 and #345805).
+(Project No. #340140, #340182, #345804 and #345805).
 
 The SPaiK software is covered by the MIT license.
 
@@ -24,7 +24,7 @@ to be installed. Finally, just type "python3.7 spaik.py".
 
 References:
 
-    for SPaiK, sGVT, and SLMBA:
+    for SPaiK, sGVT, and StoLMBM:
        N. Karmitsa, T. Pahikkala, A. Airola "Scalable pairwise kernel learning 
        with stochastic vec trick", 2025. 
 
@@ -32,11 +32,7 @@ References:
        T. Pahikkala, A. Airola, "Rlscore: Regularized least-squares learners", 
        Journal of Machine Learning Research, Vol. 17, No. 221, pp. 1-5, 2016.
 
-    for SLMBA and LMBM:
-       N. Karmitsa, V.-P. Eronen, M.M. Mäkelä, T. Pahikkala, A. Airola 
-       "Stochastic limited memory bundle algorithm for clustering in big data", 
-       Pattern Recognition, Vol 165, 111654, 2025. (A slightly different version of the SLMBA).
-
+    for LMBM and SLMBA :
        N. Haarala, K. Miettinen, M.M. Mäkelä, "Globally Convergent Limited Memory Bundle Method  
        for Large-Scale Nonsmooth Optimization", Mathematical Programming, Vol. 109, No. 1,
        pp. 181-205, 2007. DOI 10.1007/s10107-006-0728-2.
@@ -45,9 +41,20 @@ References:
        Nonsmooth Optimization", Optimization Methods and Software, Vol. 19, No. 6, pp. 673-692, 2004. 
        DOI 10.1080/10556780410001689225.
 
-    for NSO:
+       N. Karmitsa, V.-P. Eronen, M.M. Mäkelä, T. Pahikkala, A. Airola 
+       "Stochastic limited memory bundle algorithm for clustering in big data", 
+       Pattern Recognition, Vol 165, 111654, 2025. (A different version of the stochastic LMBM).
+
+
+    for Nonsmooth Optimization:
        A. Bagirov, N. Karmitsa, M.M. Mäkelä, "Introduction to nonsmooth optimization: theory, 
        practice and software", Springer, 2014.
+
+
+    for Interaction Concordance Index, Data, and Experimental Settings:
+        T. Pahikkala, R. Numminen, P. Movahedi, N. Karmitsa, and A. Airola, "Interaction Concordance Index:
+        Performance Evaluation for Interaction Prediction Methods", ArXiv2510.14419, 2025.
+
 
 '''
 import csv
@@ -59,9 +66,9 @@ import time
 from numpy.random import SeedSequence
 from rlscore.kernel import GaussianKernel, LinearKernel
 from rlscore.measure import cindex,sqerror
-from A_index import cython_assignmentIndex
+from A_index import cython_assignmentIndex # Interaction concordance index
 
-import data         # load pairwise data and divide it to different settings, source copied from A-index with minor modifications.
+import data         # load pairwise data and divide it to different settings
 import spaik        # fortran program
 import pkl_utility  # python utility programs for SPaiK
 
@@ -100,17 +107,18 @@ def run_spkl(params):
     validation_target_inds = target_inds[validation_inds]
     Y_validation = Y[validation_inds]
 
-    # The used experimental settings S1-S4 are not explicitly given so it needs to be found out.
+    # The used of training set experimental settings IDIT, IDOT, ODIT, and ODOT 
+    # are not explicitly given so they need to be found out.
     if set(test_drug_inds).isdisjoint(set(train_drug_inds)):
         if set(test_target_inds).isdisjoint(set(train_target_inds)):
-            setting = "S4"
+            setting = "ODOT"
         else:
-            setting = "S3"
+            setting = "ODIT"
     else:
         if set(test_target_inds).isdisjoint(set(train_target_inds)):
-            setting = "S2"
+            setting = "IDOT"
         else:
-            setting = "S1"
+            setting = "IDIT"
 
     
     """ Defining kernels """
@@ -194,7 +202,7 @@ def run_spkl(params):
 
     CIbest_of_best_vali = 0.0
     usedTimeAll = 0.0
-    seed = [seedOrig]*8 # Seed for SLMBA and sGVT
+    seed = [seedOrig]*8 # Seed for StoLMBM and sGVT
     
     for rp in range(nrho):
         if autoreg == 0:
@@ -221,7 +229,7 @@ def run_spkl(params):
         # Initialization of indices
         CIbestvali = 0.0
         
-        for h in range(5): # itmax^SPaiK = 5
+        for h in range(10): # itmax^SPaiK = 10
             if dw == 1:
                 spaik.fmodule.spaik(apy,ppy,Y,matD,matT,matM,matG,rows1,cols1,loss,iterm,nit,nrec,spaik.initpkl.m,spaik.initpkl.q,batchsize,seed,h)
             else:
@@ -290,9 +298,11 @@ def run_spkl(params):
                 #print ("The final solution (C-index, IC-index, MSE) in %s, under the setting %s: %f, %f, %f"%(ds, setting, testCI, testAI, testMSE))
                 print (' CPU time = %4.2f' %(usedTimeAll+usedtime))
                 #print ('\n')
-                break # 
-            if CIbestvali > valiCI:
-                print (" Early stopping.")
+                break 
+            # Early stopping
+            # Uncomment, if you want to have early stopping when the result is not improving from the previous batch
+            #if CIbestvali > valiCI: 
+                #print (" Early stopping.")
                 ## Compute MSE
                 #testMSE = sqerror(Y_test, PCI)
                 ## Compute IC-index
@@ -300,9 +310,9 @@ def run_spkl(params):
                 ## Compute CI    
                 #testCI = cindex(Y_test, PCI) 
                 #print ("The final solution (C-index, IC-index, MSE) in %s, under the setting %s: %f, %f, %f"%(ds, setting, testCI, testAI, testMSE))
-                print (' CPU time = %4.2f' %(usedTimeAll+usedtime))
+                #print (' CPU time = %4.2f' %(usedTimeAll+usedtime)) 
                 #print ('\n')
-                break 
+                #break 
 
             # Print the intermediate result
             print("\n Current solution (C-index in validation) in %s under setting %s : %f" %(ds, setting, valiCI))
@@ -356,7 +366,7 @@ if __name__ == "__main__":
     #datasets = ["davis","metz","kiba","merget","GPCR","IC","E"]
     ibin = 0 # ibin = 1 with binary data (for GPRC, IC, and E, set later on)
 
-    # Select percentage of samples in training data with setting S1
+    # Select percentage of samples in training data with setting IDIT
     split_percentage = 1.0/3
     
     # Select the loss function from the list below (only one at the time!)
@@ -388,7 +398,7 @@ if __name__ == "__main__":
         
     # Select the size of the batch (percentages of n: 100 is full batch, while 20 means that nbatch ~ n/5)
     # Note that the batch is selected target-wise, and thus, the final size of the batch may vary a little bit.
-    batchsize = 10 # Note change "seeds" above if batchsize = 100
+    batchsize = 20 # Note change "seeds" above if batchsize = 100
 
     for ds in datasets:
         
@@ -427,7 +437,7 @@ if __name__ == "__main__":
  
         # Output (give name of the output file with performance indices below)
         field = ["Data: "+ds+"."]
-        outfile = 'test'+str(batchsize)+'.csv'
+        outfile = 'test_'+str(batchsize)+'.csv'
         with open(outfile, 'a') as f:
             writer = csv.writer(f, delimiter=";", lineterminator="\n")
             writer.writerow(field)
@@ -448,11 +458,12 @@ if __name__ == "__main__":
             splits_1234 = list(it.chain.from_iterable(splits))
                 
             for seed in seeds: # Runs with different random batches
+                batchsize = 5 # tämä uusi testaus 1.11.
                 parameters = it.product([Y], [XD], [XT], [drug_inds], [target_inds], splits_1234,[loss],[kernels],[ireg],[autoreg],[regparam],[epsilon],[ibin],[batchsize],[seed])
         
                 # Compute different settings at the same time.
-                #pool = mp.Pool(processes = 4) # Note that the prints for console may be mixed
-                pool = mp.Pool(processes = 1)
+                pool = mp.Pool(processes = 4) # Note that the prints for console may be mixed
+                #pool = mp.Pool(processes = 1)
                 output = pool.map(run_spkl, list(parameters))
                 pool.close()
                 pool.join()
