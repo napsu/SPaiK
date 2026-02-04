@@ -1671,12 +1671,12 @@ SUBROUTINE nmlls(n,x,g,d,xo,t,fo,f,fold,p,alfn,tmin,dnorm,wk,theta,epsl,epsr,&
         nnk       ! Number of consequtive null steps.
     INTEGER, INTENT(INOUT) :: &
         inewnma, &! index for array.
-        nfe, &    ! Number of function evaluations.
-        nge       ! Number of subgradient evaluations.
-    INTEGER, INTENT(OUT) :: &
         iters, &  ! Null step indicator.
                   !   0  - Null step.
                   !   1  - Serious step.
+        nfe, &    ! Number of function evaluations.
+        nge       ! Number of subgradient evaluations.
+    INTEGER, INTENT(OUT) :: &
         iterm     ! Cause of termination:
                   !   0  - Everything is ok.
                   !  -3  - Failure in function or subgradient calculations.
