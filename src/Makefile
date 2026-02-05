@@ -13,7 +13,8 @@
 #   python3.7 spaik.py
 # 
 #FF = gfortran -O2 -ffast-math
-EXT_SUFFIX := $(zsh python3-config --extension-suffix)
+#EXT_SUFFIX := $(zsh python3-config --extension-suffix)
+EXT_SUFFIX := $(shell python3-config --extension-suffix)
 FF = gfortran -O2
 PF = python3.7 -m numpy.f2py
 FLAGS = 

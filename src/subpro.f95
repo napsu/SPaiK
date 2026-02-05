@@ -591,7 +591,6 @@ CONTAINS
       
     CALL lineq(n,m,iold,a,x,y,ierr)
     IF (ierr /= 0) THEN
-       PRINT*,'hihu'
        IF (iprint == 2) THEN
           WRITE (6,FMT='(1X,''Warning: Indefinite matrix detected. '')')
        END IF

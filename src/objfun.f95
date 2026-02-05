@@ -99,7 +99,6 @@ CONTAINS
         ydiff = zero
         ptmp = p(1)
                     
-        !call gvt(p,myx,n) ! computes p = K myx
         call sgvt(p,myx) ! computes p = K myx
         
         SELECT CASE(rf) ! Select the loss function used                   
@@ -163,7 +162,7 @@ CONTAINS
             else ! L2-norm
                 f = f + rho/2.0_prec * dot_product(myx,p)
             end if    
-            !print*,'The first regularization parameter rho = ',rho,rho2
+
         else ! regularization parameter from the user-specified list and for all but first iteration
             if (ireg == 0) then !double regularization
     
@@ -196,7 +195,6 @@ CONTAINS
     !************************************************************************
      
     SUBROUTINE myg(n,myx,g,iterm)
-        ! HUOM näitä pitää miettiä stokastisen version kanssa esim g/n ja gvt:ssä p:n nollaus etc
 
         USE param, ONLY : zero,one,large  ! Parameters.
         USE initpkl, ONLY : &
@@ -237,7 +235,6 @@ CONTAINS
                     i=batchind(i2)
                     g(i)=p(i)-y(i)
                 end do
-                !call gvt(g,g,n)
                 call sgvtG(g,g)
                 g = g/REAL(n,prec) ! testi
             
@@ -252,7 +249,6 @@ CONTAINS
                         end if
                     end if    
                 END DO
-                !call gvt(gtmp,g,n)
                 call sgvtG(gtmp,g)
                 g = gtmp/REAL(n,prec)
             
@@ -268,7 +264,6 @@ CONTAINS
                         g(i) = 0.0_prec    
                     END IF
                 END DO
-                !call gvt(gtmp,g,n)
                 call sgvtG(gtmp,g)
                 g = gtmp/REAL(n,prec) 
     
@@ -279,19 +274,16 @@ CONTAINS
                         g(i) = p(i) - y(i)
                     end if    
                 END DO
-                !call gvt(gtmp,g,n)
                 call sgvtG(gtmp,g) !  computes gtmp = K g
                 g = gtmp/REAL(n,prec)! 
     
             CASE(5) ! SVM with hinge loss 
                 do i2=1,nbatch
                     i=batchind(i2)
-                !DO i=1,n
                     if (1 - p(i)*y(i) > 0) then
                         g(i) = - y(i)
                     end if
                 END DO !
-                !call gvt(g,g,n)
                 call sgvtG(gtmp,g)
                 g = gtmp/REAL(n,prec)! 
                         
@@ -308,7 +300,6 @@ CONTAINS
                                     
                     end if                        
                 END DO
-                !call gvt(gtmp,g,n)
                 call sgvtG(gtmp,g)
                 g = gtmp/REAL(n,prec)
 

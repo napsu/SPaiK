@@ -43,7 +43,7 @@ MODULE initpkl  ! Saved parameters for pairwise kernel learning.
     INTEGER, SAVE :: & !
         m,q, &                       ! Numbers of unique "drugs" and "targets" (from python);
         ibin, &                      ! ibin = 1 with binary data (from python);
-        nb, &                        ! Size of the batch, nb <= nrecords; ! miksi tämä on täällä eikä tuolla slmba:ssa?
+        nb, &                        ! Size of the batch, nb <= nrecords; 
         rf, &                        ! Switch for loss function (from python);
         ireg, &                      ! Switch for regularization (from python):
                                      !   0 - L1 + L2 -norms,   
@@ -166,7 +166,7 @@ CONTAINS
         IF (tolf2 == zero) tolf2 = 1.0E+04_prec    ! Second tolerance for change of function values.
         IF (tolb  == zero) tolb  = -large + small  ! Tolerance for the function value.
         IF (tolg  <= zero) tolg  = 1.0E-05_prec    ! Tolerance for the termination criterion.
-        IF (tolg2  <= zero) tolg = 1.0E-03_prec    ! Tolerance for the second termination criterion.
+        IF (tolg2  <= zero) tolg2 = 1.0E-03_prec    ! Tolerance for the second termination criterion.
         IF (xmax  <= zero) xmax  = 1000.0_prec     ! Maximum stepsize.
         IF (eta   <  zero) eta   = 1.0E-4_prec     ! Distance measure parameter
         IF (epsl  <= zero) epsl  = 0.24_prec       ! Line search parameter,

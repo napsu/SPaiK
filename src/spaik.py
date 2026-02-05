@@ -220,11 +220,9 @@ def run_spkl(params):
         # Compute C-index
         P_test = pkotest.matvec(apy)
         testCI = cindex(Y_test, P_test)
-        #print("C-index at a^0 with setting %s:        %f" %(setting, testCI))
         
         # Compute MSE
         testMSE = sqerror(Y_test, P_test)
-        #print("MSE at a^0 with setting %s:       %f" %(setting, testMSE))
 
         # Initialization of indices
         CIbestvali = 0.0
@@ -458,7 +456,6 @@ if __name__ == "__main__":
             splits_1234 = list(it.chain.from_iterable(splits))
                 
             for seed in seeds: # Runs with different random batches
-                batchsize = 5 # tämä uusi testaus 1.11.
                 parameters = it.product([Y], [XD], [XT], [drug_inds], [target_inds], splits_1234,[loss],[kernels],[ireg],[autoreg],[regparam],[epsilon],[ibin],[batchsize],[seed])
         
                 # Compute different settings at the same time.
