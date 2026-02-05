@@ -1,0 +1,28 @@
+# Core dependencies for SPaiK - Scalable Pairwise Kernel Learning Software
+# Python 3.7+
+
+# Numerical computing
+numpy>=1.19.0,<2.0.0
+
+# Data manipulation
+pandas>=1.1.0,<3.0.0
+
+# Machine learning - RLScore for kernel methods
+# Install from: https://github.com/aatapa/RLScore
+# or via: pip install rlscore
+rlscore>=0.8.0
+
+# Cython for compiling A_index.pyx
+Cython>=0.29.0,<4.0.0
+
+# Build tools (needed for f2py and Fortran interface)
+# numpy already includes f2py
+setuptools>=50.0.0
+wheel>=0.36.0
+
+# Optional but recommended for development
+# Uncomment if needed:
+# pytest>=6.0.0              # For testing
+# black>=22.0.0              # For code formatting
+# flake8>=4.0.0              # For linting
+# mypy>=0.900                # For type checking
