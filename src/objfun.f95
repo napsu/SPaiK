@@ -427,15 +427,14 @@ subroutine sgvt(p,a)
     do h2=1,nbatch 
         h = batchind(h2)
     
-        if (h>n) print*,'Something wrong with h in sGVT',h,n
         i = r(h2)
-        !i = r(h)
-        if (i>q) print*,'Something wrong with i in sGVT',i,q
-        j = s(h2) ! 
-        if (j>m) then
-            print*,'Something wrong with j in sGVT',j,m
-            stop
-        end if
+        j = s(h2) 
+        !if (h>n) print*,'Something wrong with h in sGVT',h,n
+        !if (i>q) print*,'Something wrong with i in sGVT',i,q
+        !if (j>m) then
+        !    print*,'Something wrong with j in sGVT',j,m
+        !    stop
+        !end if
 
         inner: do k=1,q 
             matM(k,j)=matM(k,j)+ a(h)*matT(k,i) 
