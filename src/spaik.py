@@ -3,8 +3,8 @@
 Main program for
 
 SPaiK   - Scalable Pairwise Kernel Learning Software using stochastic 
-limited memory bundle method (StoLMBM), stochastic generalized vec 
-trick (sGVT), and kernels from RLScore.  
+inexact limited memory bundle method (StoILMBM), stochastic generalized 
+vec trick (sGVT), and kernels from RLScore.  
                                                                        
 The work was financially supported by the Research Council of Finland 
 (Project No. #340140, #340182, #345804 and #345805).
@@ -24,15 +24,18 @@ to be installed. Finally, just type "python3.7 spaik.py".
 
 References:
 
-    for SPaiK, sGVT, and StoLMBM:
-       N. Karmitsa, T. Pahikkala, A. Airola "Scalable pairwise kernel learning 
-       with stochastic vec trick", 2025. 
+    for SPaiK, sGVT, and StoiLMBM:
+       N. Karmitsa, T. Pahikkala, A. Airola, "Scalable pairwise kernel learning 
+       with stochastic vec trick", 2026. 
 
     for RLScore:
        T. Pahikkala, A. Airola, "Rlscore: Regularized least-squares learners", 
        Journal of Machine Learning Research, Vol. 17, No. 221, pp. 1-5, 2016.
 
-    for LMBM and SLMBA :
+    for inexactLMBM, LMBM, and SLMBA:
+       J. Lampainen, K. Joki, N. Karmitsa, and M.M. Mäkelä, "Inexact limited 
+       memory bundle method", 2026. Available at https://arxiv.org/abs/2604.08067,
+
        N. Haarala, K. Miettinen, M.M. Mäkelä, "Globally Convergent Limited Memory Bundle Method  
        for Large-Scale Nonsmooth Optimization", Mathematical Programming, Vol. 109, No. 1,
        pp. 181-205, 2007. DOI 10.1007/s10107-006-0728-2.
@@ -165,16 +168,16 @@ def run_spkl(params):
     if dw == 1: # drug-wise order
         spaik.initpkl.m = len(KD_train)
         spaik.initpkl.q = len(KT_train)
-        print (" The number of variables in optimization: ",nrec)
-        print (" The numbers of unigue drugs and targets: ",spaik.initpkl.m, spaik.initpkl.q)
-        print ('\n')
+        #print (" The number of variables in optimization: ",nrec)
+        #print (" The numbers of unigue drugs and targets: ",spaik.initpkl.m, spaik.initpkl.q)
+        #print ('\n')
 
     else: # target-wise order
         spaik.initpkl.q = len(KD_train) # Note! Here q is number of drugs and m is number of targets
         spaik.initpkl.m = len(KT_train)
-        print (" The number of variables in optimization: ",nrec)
-        print (" The numbers of unigue drugs and targets: ",spaik.initpkl.q, spaik.initpkl.m)
-        print ('\n')
+        #print (" The number of variables in optimization: ",nrec)
+        #print (" The numbers of unigue drugs and targets: ",spaik.initpkl.q, spaik.initpkl.m)
+        #print ('\n')
 
     # Auxiliary matrices for sGVT
     size = spaik.initpkl.m * spaik.initpkl.q
@@ -202,7 +205,7 @@ def run_spkl(params):
 
     CIbest_of_best_vali = 0.0
     usedTimeAll = 0.0
-    seed = [seedOrig]*8 # Seed for StoLMBM and sGVT
+    seed = [seedOrig]*8 # Seed for StoILMBM and sGVT
     
     for rp in range(nrho):
         if autoreg == 0:
@@ -226,8 +229,9 @@ def run_spkl(params):
 
         # Initialization of indices
         CIbestvali = 0.0
+        valiCounter = 0 
         
-        for h in range(10): # itmax^SPaiK = 10
+        for h in range(50): # itmax^SPaiK = 50
             if dw == 1:
                 spaik.fmodule.spaik(apy,ppy,Y,matD,matT,matM,matG,rows1,cols1,loss,iterm,nit,nrec,spaik.initpkl.m,spaik.initpkl.q,batchsize,seed,h)
             else:
@@ -244,7 +248,7 @@ def run_spkl(params):
         
             ## Compute MSE
             ## If you want to compute MSE at every iteration uncomment the following lines. 
-            ## Otherwise, MSE is computed in best-so-far solutions.
+            ## Otherwise, MSE is only computed in best-so-far solutions.
             #valiMSE = sqerror(Y_validation, P_val)
             #testMSE = sqerror(Y_test, P_test)
             #print("MSE in validation data with setting %s after %i iterations: %f" %(loss, setting, nit, valiMSE))
@@ -252,7 +256,7 @@ def run_spkl(params):
 
             ## Compute IC-index
             ## If you want to compute IC-index at every iteration uncomment the following lines. 
-            ## Otherwise, IC-index is computed in best-so-far solutions.
+            ## Otherwise, IC-index is only computed in best-so-far solutions.
             #valiAI = cython_assignmentIndex(validation_drug_inds, validation_target_inds, Y_validation, P_val.reshape((P_val.shape[0],1)))[0]
             #testAI = cython_assignmentIndex(test_drug_inds, test_target_inds, Y_test, P_test.reshape((P_test.shape[0],1)))[0]
             #print("IC-index in validation data with setting %s after %i iterations: %f" %(loss, setting, nit, valiAI))
@@ -267,8 +271,10 @@ def run_spkl(params):
 
 
             usedtime = time.process_time() - usedtime0
+                        
             if CIbestvali < valiCI:
                 CIbestvali = valiCI
+                valiCounter = 0
                 if CIbest_of_best_vali < CIbestvali:
                     CIbest_of_best_vali = valiCI
                     
@@ -283,41 +289,13 @@ def run_spkl(params):
                     itbestCI = nit+0 
                     bestlamCI = np.float32(spaik.initpkl.rho)
                     PCI = P_test
+            else: # Early stopping
+                valiCounter += 1
+                if valiCounter > 3: 
+                    print (" Early stopping.",iterm)
+                    break
 
-            if ((iterm == 1 or iterm == 2 or iterm == 3 or iterm == 8) and h>0):
-                print (" Optimization successfully terminated!")
-                ## Compute MSE
-                #testMSE = sqerror(Y_test, PCI)
-                ## Compute IC-index
-                #testAI = cython_assignmentIndex(test_drug_inds, test_target_inds, Y_test, PCI.reshape((PCI.shape[0],1)))[0]
-                ## Compute CI    
-                #testCI = cindex(Y_test, PCI) 
-                    
-                #print ("The final solution (C-index, IC-index, MSE) in %s, under the setting %s: %f, %f, %f"%(ds, setting, testCI, testAI, testMSE))
-                print (' CPU time = %4.2f' %(usedTimeAll+usedtime))
-                #print ('\n')
-                break 
-            # Early stopping
-            # Uncomment, if you want to have early stopping when the result is not improving from the previous batch
-            #if CIbestvali > valiCI: 
-                #print (" Early stopping.")
-                ## Compute MSE
-                #testMSE = sqerror(Y_test, PCI)
-                ## Compute IC-index
-                #testAI = cython_assignmentIndex(test_drug_inds, test_target_inds, Y_test, PCI.reshape((PCI.shape[0],1)))[0]
-                ## Compute CI    
-                #testCI = cindex(Y_test, PCI) 
-                #print ("The final solution (C-index, IC-index, MSE) in %s, under the setting %s: %f, %f, %f"%(ds, setting, testCI, testAI, testMSE))
-                #print (' CPU time = %4.2f' %(usedTimeAll+usedtime)) 
-                #print ('\n')
-                #break 
-
-            # Print the intermediate result
-            print("\n Current solution (C-index in validation) in %s under setting %s : %f" %(ds, setting, valiCI))
-            print(' CPU time = %4.2f' %(usedTimeAll+usedtime))
-            print('\n')
-            #print('\n')
-            seed = [5+h]*8 # Just to change this between validation   
+            seed = [5+h]*8 # Change seed between validation   
 
         usedTimeAll += usedtime
         #print('\n')
@@ -339,8 +317,8 @@ def run_spkl(params):
     testAI = cython_assignmentIndex(test_drug_inds, test_target_inds, Y_test, PCI.reshape((PCI.shape[0],1)))[0]
     # Compute CI    
     testCI = cindex(Y_test, PCI) 
-    print ("\n The final solution in %s test data (C-index, IC-index, and MSE) under the setting %s: %f, %f, %f"%(ds, setting, testCI, testAI, testMSE))
-    print('\n')
+    #print ("\n The final solution in %s test data (C-index, IC-index, and MSE) under the setting %s: %f, %f, %f"%(ds, setting, testCI, testAI, testMSE))
+    #print('\n')
 
 
     return(setting,bestlamCI,testCI,testAI,testMSE,itbestCI,nit+0,usedtime) 
@@ -351,17 +329,17 @@ if __name__ == "__main__":
     ss = SeedSequence(base_seed)
     random_seeds = ss.generate_state(repetitions)
     #seeds = [3] # Seeds for batches, use only one list item if batchsize = 100 
-    seeds = [3,12,123,1234,12345]
+    seeds = [3,12,123,1234,12345] # 25 runs total when repetitions = 5
     
     # Select the data from the list below (or add your own with appropriate loading procedure)
-    datasets = ["davis"]
+    #datasets = ["davis"]
     #datasets = ["metz"]
     #datasets = ["kiba"]
     #datasets = ["merget"]
     #datasets = ["GPCR"]
     #datasets = ["IC"]
     #datasets = ["E"]
-    #datasets = ["davis","metz","kiba","merget","GPCR","IC","E"]
+    datasets = ["davis","metz","kiba","merget","GPCR","IC","E"]
     ibin = 0 # ibin = 1 with binary data (for GPRC, IC, and E, set later on)
 
     # Select percentage of samples in training data with setting IDIT
@@ -377,8 +355,8 @@ if __name__ == "__main__":
     #loss = "svm-hinge"           # Use without auto-regularization with regparam = 0.00001
     #loss = "squared-svm"         # Use without auto-regularization with regparam = 0.00001
 
-    # Select epsilon for epsilon intensive hinge-losses
-    epsilon = 0.0001 
+    # Select epsilon for epsilon intensive hinge-losses (now computed below, comment if you use this.)
+    # epsilon = 0.0001  
 
     # Select the kernels (KD, KT, K_pairwise) from the list below (only one combination at the time).
     kernels = [["gaussian", "gaussian", "pko_kronecker"]]
@@ -391,12 +369,10 @@ if __name__ == "__main__":
     autoreg = 1 # Type of regularization: 0 = selected regularization parameters (give values below), 1 = automatic regularization (default).
     regparam = [2.0**(-10)] # Used with autoreg == 0. Note, give at least one regparam even if you use autoreg = 1
     #regparam = [2.0**(-25),2.0**(-20),2.0**(-15),2.0**(-10), 2.0**(-5),2.0**(-2)] # Short list is usually enough.
-    #regparam = [2.0**(-10), 2.0**(-5), 2.0**(-4), 2.0**(-3), 2.0**(-2), 2.0**(-1), 2.0**(0), 2.0**(1), \
-    #    2.0**(2), 2.0**(3), 2.0**(4), 2.0**(5), 2.0**(10)]
         
     # Select the size of the batch (percentages of n: 100 is full batch, while 20 means that nbatch ~ n/5)
     # Note that the batch is selected target-wise, and thus, the final size of the batch may vary a little bit.
-    batchsize = 20 # Note change "seeds" above if batchsize = 100
+    batchsize = 10 # Note change "seeds" above if batchsize = 100
 
     for ds in datasets:
         
@@ -404,6 +380,9 @@ if __name__ == "__main__":
         XD, XT, Y, drug_inds, target_inds = eval('data.load_'+ds+'()')    
         n_D = XD.shape[0]
         n_T = XT.shape[0]
+
+        # Select epsilon for epsilon intensive hinge-losses
+        epsilon = 0.00001*np.max(Y)
 
         print('\n')
         print('SPaiK:     Loss function:          ',loss)
@@ -435,7 +414,7 @@ if __name__ == "__main__":
  
         # Output (give name of the output file with performance indices below)
         field = ["Data: "+ds+"."]
-        outfile = 'test_'+str(batchsize)+'.csv'
+        outfile = 'test_kesa_'+str(batchsize)+'.csv'
         with open(outfile, 'a') as f:
             writer = csv.writer(f, delimiter=";", lineterminator="\n")
             writer.writerow(field)

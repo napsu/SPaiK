@@ -15,7 +15,7 @@
 #FF = gfortran -O2 -ffast-math
 #EXT_SUFFIX := $(zsh python3-config --extension-suffix)
 EXT_SUFFIX := $(shell python3-config --extension-suffix)
-FF = gfortran -O2
+FF = gfortran -O3 -march=native -ffast-math -funroll-loops -flto
 PF = python3.7 -m numpy.f2py
 FLAGS = 
 #FLAGS = --f90flags='-O2'

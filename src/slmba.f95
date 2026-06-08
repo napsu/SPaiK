@@ -1,26 +1,20 @@
 !*************************************************************************
 !*                                                                       *
-!*     SLMBA    - Stochastic Limited Memory Bundle Algorithm for         *
-!*                nonsmooth nonconvex optimization                       *
+!*     SLMBA    - Stochastic Inexact Limited Memory Bundle Algorithm     *
+!*                for nonsmooth nonconvex optimization                   *
 !*                                                                       *
-!*     by Napsu Karmitsa 2024 (last modified 23.8.2024)                  *
+!*     by Napsu Karmitsa 2026 (last modified 08.06.2026)                 *
 !*                                                                       *
-!*     This file is specially modified to solve scalable pairwise        *
-!*     kernel learning problems and it is part of SPaiK software.        *
-!*                                                                       *
-!*     The work was financially supported by the Research Council of     *
-!*     Finland (Project No. 345804 and 345805).                          *
-!*                                                                       *
-!*     The SPaiK software (including the SLMBA) is covered by the        *
+!*     The SPaiK software (including the ISLMBA) is covered by the       *
 !*     MIT license.                                                      *
 !*                                                                       *
 !*************************************************************************
 !*
 !*     Modules included: 
 !*
-!*     slmba_mod       ! Stochastic Limited Memory Bundle Algorithm
+!*     slmba_mod       ! Stochastic Inexact Limited Memory Bundle Algorithm
 !*
-MODULE slmba_mod  ! Stochastic Limited memory bundle algorithm
+MODULE slmba_mod  ! Stochastic Inexact Limited memory bundle algorithm
 
     USE r_precision, ONLY : prec  ! Precision for reals.
     IMPLICIT NONE
@@ -41,6 +35,8 @@ MODULE slmba_mod  ! Stochastic Limited memory bundle algorithm
                       !     F qint    Quadratic interpolation.
         nmlls, &      ! S Nonmonotonic Weak Wolfe line search. Contains:
                       !     F qint    Quadratic interpolation.
+        select_new_point, &    ! S Selection of a new point.
+        nm_select_new_point, & ! S Nonmonotone selection of a new point.
         armijo, &     ! S Armijo line search.
         nmarmijo, &   ! S Nonmonotone Armijo line search.
         dlbfgs, &     ! S Computing the search direction by limited memory
@@ -112,8 +108,6 @@ CONTAINS
             myg              ! Computation of the subgradient of the objective function.
 
         USE subpro, ONLY : &
-            xdiffy, &        ! Difference of two vectors.
-            copy, &          ! Copying of a vector.
             copy2            ! Copying of two vectors.
 
         IMPLICIT NONE
@@ -215,6 +209,7 @@ CONTAINS
             iflag, &     ! Index for adaptive version.
             neps, &      ! Number of consecutive equal stopping criterions.
             ntesf, &     ! Number of tests on function decrease.
+            nconv, &     ! Number of tests on nonconvergence.
             ncres, &     ! Number of restarts.
             nres, &      ! Number of consecutive restarts.
             nress, &     ! Number of consecutive restarts in case of tmax < tmin.
@@ -239,6 +234,7 @@ CONTAINS
         CALL RANDOM_SEED (PUT = seed) 
     
         ! Initialization   
+        nconv   = 0 
         ib      = 0     
         inth    = 0
         inewnma = 1
@@ -298,24 +294,14 @@ CONTAINS
             nb = k-1
 
         else
-            k=1
+            ! Full batch - use all pairs directly
+            nb = n
             do i = 1,n
-                do j = 1,nbatch
-                    if (si(i)==batchind(j)) then !
-                        sbatch(k) = si(i)
-                        rbatch(k) = ri(i)
-                        bi(k) = i
-                        k = k+1
-                    end if
-                end do
+                sbatch(i) = si(i)
+                rbatch(i) = ri(i)
+                bi(i) = i
             end do
-
-            nb = k-1
-
         end if
-
-        print*,'The size of the batch: ',nb 
-        print*,' '
 
         ! Computation of the value and the subgradient of the objective
         ! function and the search direction for the first iteration
@@ -337,6 +323,7 @@ CONTAINS
         
         ! Start of the batch
         batch: DO ibatch = 1,maxbatch
+            !print*,'batch = ',ibatch,maxbatch
 
             ! Start of the iteration
             iteration: DO
@@ -366,7 +353,7 @@ CONTAINS
                         CALL wprint(iterm,iprint,-3)
              
                         IF (ncres + 1> maxnrs) THEN
-                            PRINT*,'Too many restarts. Trying a new batch.'
+                            !PRINT*,'Too many restarts. Trying a new batch.'
                             nout = maxnrs + 1
                             iterm = -2
                             EXIT iteration ! iterm < 0 clean up the memory and go to new batch
@@ -379,7 +366,7 @@ CONTAINS
                         CYCLE iteration
                     END IF
                     nout = -1
-                    PRINT*,'Two consecutive restarts. Trying a new batch.'
+                    !PRINT*,'Two consecutive restarts. Trying a new batch.'
                     iterm = -1
                     EXIT iteration ! iterm < 0 clean up the memory and go to new batch
                 END IF
@@ -401,7 +388,7 @@ CONTAINS
                     IF(half*gnorm + alfv <= tolg2 .AND. &
                         xnorm <= tolg) THEN
           
-                        PRINT*,'Desired accuracy in batch ',ibatch
+                        !PRINT*,'Desired accuracy in batch ',ibatch
                         iterm = 1
                         EXIT iteration ! Go to new batch
                     END IF
@@ -417,9 +404,8 @@ CONTAINS
 
                     if (fbest > f) then
                         fbest = f
-                        do i =1,n 
-                            xbest(i) = x(i)
-                        end do
+                        xbest = x
+                        
                         if (iterm <= 0) then 
                             CALL myf(n,xbest,f,iterm) ! to obtain M and G in xbest. These are needed for next batch.
                             CALL myg(n,xbest,g,iterm) ! 
@@ -430,7 +416,7 @@ CONTAINS
                     end if
         
                     iterm = 4
-                    PRINT*,'Termination with nfe > mfe.'
+                    !PRINT*,'Termination with nfe > mfe.'
                     EXIT batch 
                 END IF
 
@@ -439,9 +425,8 @@ CONTAINS
                     nout = mit
                     if (fbest > f) then
                         fbest = f
-                        do i =1,n 
-                            xbest(i) = x(i)
-                        end do
+                        xbest = x
+                        
                         if (iterm <= 0) then 
                             CALL myf(n,xbest,f,iterm) ! to obtain M and G in xbest. These are needed for next batch.
                             CALL myg(n,xbest,g,iterm) ! 
@@ -452,7 +437,7 @@ CONTAINS
                     end if
     
                     iterm = 5
-                    PRINT*,'Termination with nit > mit.'
+                    !PRINT*,'Termination with nit > mit.'
                     EXIT batch
                 END IF
     
@@ -468,7 +453,7 @@ CONTAINS
                         neps = neps + 1
           
                         IF (neps > maxeps) THEN
-                            PRINT*,'Does not converge in batch',ibatch,' -> Trying a new batch.'
+                            !PRINT*,'Does not converge in batch',ibatch,' -> Trying a new batch.'
                             !CALL myf(n,x,f,iterm) ! lisätty 21.11.Jos pred tuleekin viivahausta
                             !CALL myg(n,x,g,iterm) ! lisätty 21.11.
 
@@ -484,16 +469,17 @@ CONTAINS
                     neps = 0
                 END IF
                 
-                if (mod(nitb, nth)==0 .or. inth == 1) THEN ! compute next batch
+                IF (mod(nitb, nth)==0 .OR. inth == 1) THEN ! compute next batch
                     IF (iters > 0) THEN
                         inth = 0
+                        !print*,'hihu',nit,nitb
                         EXIT iteration
                     ELSE
                         inth = 1
                     END IF  
-                else
+                ELSE
                     inth = 0      
-                end if
+                END IF
 
 
                 ! Correction
@@ -550,7 +536,7 @@ CONTAINS
 
                         IF (ncres +1 > maxnrs) THEN
                             nout = maxnrs + 1
-                            PRINT*,'Too many restarts. Trying a new batch.'
+                            !PRINT*,'Too many restarts. Trying a new batch.'
                             iterm = -2
                             EXIT iteration
                         END IF
@@ -562,25 +548,36 @@ CONTAINS
                         CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
                         CYCLE iteration
                     END IF
-                    PRINT*,'Two consecutive restarts. Trying a new batch.'
+                    !PRINT*,'Two consecutive restarts. Trying a new batch.'
                     iterm = -1
                     EXIT iteration
                 END IF
       
 
-                ! Initial step size
+                ! Step size
 
                 CALL tinit(n,na,mal,x,af,ag,ax,ibun,d,f,p,t,tmax,tmin, &
                     eta,iters,iterm)
 
-                IF (iterm /= 0) EXIT batch ! HIHU HIHU HIHU vaihdettu batch iteraation tilalle
+                IF (iterm /= 0) EXIT batch ! 
      
-                IF (inma == 0) THEN
-                    CALL armijo(x,g,d,xo,fo,f,t,p,alfn,xnorm,epsr,iters,nfe,nge,iterm)
-
-                ELSE IF (inma == 1) THEN
-                    CALL nmarmijo(x,g,d,xo,fo,f,fold,t,p,alfn,xnorm,epsr,iters,nfe,nge,inewnma,iterm)
-
+                IF (inma == 0) THEN ! Serious / null step selection
+                    ! new step size selection 6.2.2026
+                    theta = one
+                    IF (dnorm > lengthd) THEN
+                        theta=lengthd/dnorm
+                    END IF
+                    CALL select_new_point(n,x,g,d,xo,t,fo,f,p,alfn,dnorm,xnorm, &
+                    theta,epsl,epsr,eta,iters,nfe,nge,iterm)
+    
+                ELSE IF (inma == 1) THEN ! Nonmonotone serious / null step selection
+                    theta = one
+                    IF (dnorm > lengthd) THEN
+                        theta=lengthd/dnorm
+                    END IF
+                    CALL nm_select_new_point(n,x,g,d,xo,t,fo,f,fold,p,alfn,dnorm,xnorm, &
+                    theta,epsl,epsr,eta,iters,inewnma,nfe,nge,iterm)
+    
                 ELSE IF (inma == 2) THEN ! Line search with directional derivatives which allows null steps
                     ! With this the global convergence can be guaranteed.
                     theta = one
@@ -602,16 +599,21 @@ CONTAINS
 
                 END IF
 
-                IF (iterm /= 0) EXIT batch ! HIHU HIHU HIHU vaihdettu batch iteraation tilalle
+                IF (iterm /= 0) EXIT batch 
        
                 IF (tolf2 >= 0) THEN
-                    IF (ABS(fo-f) <= tolf2*small*MAX(ABS(f),ABS(fo),one) &
-                        .AND. iters == 1) THEN
-             
-                        iterm = 3
-                        EXIT iteration 
+                    IF (iters == 0 .AND. xnorm <= one .AND. (ABS(xnorm - pxnorm) <= tolf2)) then
+                        nconv = nconv+1
+                    ELSE
+                        nconv = 0
+                    END IF    
+                    IF (nconv > 50) THEN 
+                            iterm = 3
+                        EXIT iteration
                     END IF
                 END IF
+
+                
                 IF (iters == 1) THEN
                     IF (ABS(fo-f) <= tolf*MAX(ABS(f),ABS(fo),one)) THEN
                         ntesf = ntesf + 1
@@ -633,7 +635,7 @@ CONTAINS
 
                 ! Computation of variables difference
 
-                CALL xdiffy(n,x,xo,s)
+                s = x - xo
   
 
                 ! Computation of aggregate values and gradients difference
@@ -642,31 +644,31 @@ CONTAINS
                     nnk = nnk + 1
 
                     IF (nnk == 1) THEN
-                        CALL copy(n,gp,tmpn1)
-                        CALL xdiffy(n,g,gp,u)
+                        tmpn1 = gp
+                        u = g - gp
              
                         CALL agbfgs(n,mc,mcc,inew,ibfgs,iflag,g,gp,ga,u,d,sm,um, &
                             rm,cm,umtum,alfn,alfv,gamma,ic,rho)
              
                     ELSE
-                        CALL copy(n,ga,tmpn1)
+                        tmpn1 = ga
                         CALL aggsr1(n,mc,mcc,inew,iflag,g,gp,ga,d,alfn,alfv &
                             ,umtum,rm,gamma,smtgp,umtgp,tmpmc1,tmpmc2,sm &
                             ,um,icn,rho)
-                        CALL xdiffy(n,g,gp,u)
+                        u = g - gp
                     END IF
           
-                    CALL copy(n,xo,x) 
+                    x = xo 
                     f = fo 
           
                 ELSE
                     IF (nnk /= 0) THEN
-                        CALL copy(n,ga,tmpn1)
+                        tmpn1 = ga
                     ELSE
-                        CALL copy(n,gp,tmpn1)
+                        tmpn1 = gp
                     END IF
                     nnk = 0
-                    CALL xdiffy(n,g,gp,u)
+                    u = g - gp
                 END IF
 
      
@@ -700,66 +702,49 @@ CONTAINS
     
             END DO iteration
 
+            !print*,'end iteration',iterm, nit, nitb
 
             if (ibatch==maxbatch) then
 
                 if (fbest > f) then
                     fbest = f
-                    do i =1,n 
-                        xbest(i) = x(i) 
-                    end do
-                    ! HIHU HIHU HIHU ! tällä pitäisi hoitua kaikki iters == 1 tapaukset, joissa pitää laskea
-                    if (iterm <= 0) then 
-                        CALL myf(n,xbest,f,iterm) ! to obtain M and G in xbest. These are needed for next batch.
-                        CALL myg(n,xbest,g,iterm) ! 
+                    xbest = x
+                    
+                    if (iterm <= 0) then !
+                        CALL myf(n,xbest,f,i) ! to obtain M and G in xbest. These are needed for next batch.
+                        CALL myg(n,xbest,g,i) ! 
                     end if
-                else if (iters == 0) then ! iterm = -2 testien järjestys on muutettava. tarviiko iterm = -4 enää laskea myf ja myg
-                    CALL myf(n,x,f,iterm) ! to obtain M and G in xbest. These are needed for next batch.
-                    CALL myg(n,x,g,iterm) ! 
+                else if (iters == 0) then 
+                    CALL myf(n,x,f,i) ! to obtain M and G in xbest. These are needed for next batch.
+                    CALL myg(n,x,g,i) ! 
                 end if
 
-                !iterm = 9 ! Tämän varmaan voisi vain ottaa pois, jolloin lopetus olisi se mikä tulee tuolta aiemmin.
-                ! Tällöin koko algo voidaan lopettaa jos iterm = 1,2,3 (ei tarvi laskea myf ja myg)
                 exit batch
             end if
         
-            !if (iterm >= 0) then                    
-                if (fbest > f) then
-                    fcount = 0
-                    fbest = f
-                    do i =1,n ! riittäiskö täällä batch alkioitten kopioiminen
-                        xbest(i) = x(i)
-                    end do
+            if (fbest > f) then
+                fcount = 0
+                fbest = f
+                xbest = x
 
-                    CALL myf(n,xbest,f,iterm) ! to obtain M and G in xbest. These are needed for next batch.
-                    CALL myg(n,xbest,g,iterm) ! 
+                CALL myf(n,xbest,f,iterm) ! to obtain M and G in xbest. These are needed for next batch.
+                CALL myg(n,xbest,g,iterm) ! 
                     
-                else
-                    fcount = fcount + 1
-                    ! HIHU HIHU HIHU if lauseen voisi lisätä.
-                    !if (iters == 0) then ! If iters == 1 we have correct values in M and G.
-                        CALL myf(n,xbest,f,iterm) ! Tämä uusi
-                        CALL myg(n,xbest,g,iterm) ! lisätty 21.11.
-                    !end if
-                end if
+            else
+                fcount = fcount + 1
+                CALL myf(n,xbest,f,iterm) ! 
+                CALL myg(n,xbest,g,iterm) ! 
+            end if
                 
-                ! Stop if the function value has not improved within mtesf last batches
-                if (fcount > mtesf) then
-                    ! HIHU HIHU HIHU jos iters == 1 x = xbest
-                    if (iters == 0) then ! if iters == 1 we have x=xbest
-                        do i =1,n 
-                            x(i) = xbest(i)
-                        end do
-                    end if
-                    iterm = 8
-                    exit batch
-                end if   
-            !end if
-
-            ! if (iterm == 6) EXIT batch ! Time limit
-
-
-
+            ! Stop if the function value has not improved within mtesf last batches
+            if (fcount > mtesf) then
+                if (iters == 0) then ! if iters == 1 we have x=xbest
+                    x = xbest
+                end if
+                iterm = 8
+                exit batch
+            end if   
+            
             ! Randomly select a new batch (target-wise)
             if (m /= nbatch) then
                 if (batchtype == 1) then
@@ -794,68 +779,36 @@ CONTAINS
     
             end if
         
-            !if (iterm >= 0) then    ! HIHU HIHU HIHU kokeile vielä ennenkuin poistat
-            if (iterm >= 10) then    
-                ! Everything is ok. Continue in next batch with saved information.
-                iterm = 0
-                iters  = 1
-                nout   = 0
-                ntesf  = 0 
-                nres   = 1
-                ncres  = -1
-                nress  = 0
-                neps   = 0
-                nnk    = 0
-                isr1   = 0
-                icn = 0
-                alfn = zero
-                alfv = zero
-
-                CALL myf(n,x,f,iterm)
-                CALL myg(n,x,g,iterm)
-                nfe = nfe + 1
-                nge = nge + 1
-    
-                IF (iterm /= 0) GO TO 900
-        
-                CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
-            
-                ! Direction finding with BFGS update
-
-                CALL dlbfgs(n,mc,mcc,inew,ibfgs,iflag,d,g,gp,s,u,sm,um,rm, &
-                    umtum,cm,smtgp,umtgp,gamma,tmpn1,iscale)
-
-            else
-                ! Failure in the current batch. Continue in next batch without old information.
-                iterm = 0
-                iters  = 1
-                inewnma = 1
-                nout   = 0
-                ntesf  = 0 
-                nres   = 1
-                ncres  = -1
-                nress  = 0
-                neps   = 0
-                nnk    = 0
-                isr1   = 0
+            ! Continue in next batch without old information.
+            iterm = 0
+            iters  = 1
+            inewnma = 1
+            nout   = 0
+            ntesf  = 0 
+            nres   = 1
+            ncres  = -1
+            nress  = 0
+            neps   = 0
+            nnk    = 0
+            isr1   = 0
                 
-                CALL myf(n,x,f,iterm) ! f in new batch
-                CALL myg(n,x,g,iterm)
+            CALL myf(n,x,f,iterm) ! f in new batch
+            CALL myg(n,x,g,iterm)
 
-                nfe = nfe + 1 
-                nge = nge + 1
+            nfe = nfe + 1 
+            nge = nge + 1
 
-                fbest = f
-                fold    = -large
+            fbest = f
+            fold    = -large
 
-                IF (iterm /= 0) GO TO 900
+            IF (iterm /= 0) GO TO 900
     
-                CALL restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
-                    alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)
+            CALL restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
+                alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)
           
-                CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+            CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
     
-            end if
+            
 
         END DO batch
     
@@ -868,12 +821,8 @@ CONTAINS
           
     ! Printout the final results
     CALL wprint(iterm,iprint,nout)
-    f = fbest ! HIHU HIHU HIHU  ei pitäis tarvita ei ainakaan, jos maxbatchit on täynnä
-    do i=1,n
-        x(i)=xbest(i) 
-    end do    
-    !CALL myf(n,x,f,iterm) ! lisätty, että predi olisi oikein. Tällä hetkellä lasketaan ylempänä tarvitaanko? ehkä että poistetaan mahd. nolla-askel MatM
-    ! mutta pitäisikö olla myös myg?
+    f = fbest !
+    x = xbest
                 
     CALL rprint(n,nit,nfe,nge,x,f,xnorm,half*gnorm+alfv,iterm,iprint)
         
@@ -932,7 +881,7 @@ CONTAINS
         iflag = 0
         
         IF (iters == 0) THEN
-            CALL copy(n,gp,g)
+            g = gp
             iters = 1
             nnk = 0
             alfv=zero
@@ -1856,6 +1805,287 @@ CONTAINS
 END SUBROUTINE nmlls
 
 
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE select_new_point *                                  *
+!*                                                                      *
+!*     Selection of new (auxiliary) point in inexactLMBM.               *
+!*                                                                      *
+!************************************************************************
+ 
+SUBROUTINE select_new_point(n,x,g,d,xo,t,fo,f,p,alfn,dnorm,wk,theta,epsl,epsr,&
+    eta,iters,nfe,nge,iterm)
+ 
+    USE param, ONLY : zero,half,one,two
+    USE obj_fun, ONLY : &
+        myf,myg        ! Computation of the value and the subgradient of
+                    ! the objective function.
+    USE subpro, ONLY : &
+        scsum       ! Sum of a vector and the scaled vector.
+ 
+    IMPLICIT NONE
+ 
+! Array Arguments
+    REAL(KIND=prec), DIMENSION(:), INTENT(IN) :: &
+        d, &        ! Direction vector.
+        xo          ! Previous vector of variables.
+    REAL(KIND=prec), DIMENSION(:), INTENT(INOUT) :: &
+        x           ! Vector of variables.
+    REAL(KIND=prec), DIMENSION(:), INTENT(OUT) :: &
+        g           ! Subgradient of the objective function.
+ 
+! Scalar Arguments
+    REAL(KIND=prec), INTENT(INOUT) :: & 
+        epsl,&      ! Linesearch parameter.
+        epsr,&      ! Linesearch parameter.
+        t           ! Stepsize
+    REAL(KIND=prec), INTENT(IN) :: & 
+        theta, &    ! Scaling parameter.
+        eta, &      ! Distance measure parameter.
+        fo, &       ! Previous value of the objective function.
+        wk, &       ! Stopping parameter.
+        dnorm       ! Euclidean norm of the direction vector.
+    REAL(KIND=prec), INTENT(OUT) :: & 
+        f, &        ! Value of the objective function.
+        p, &        ! Directional derivative.
+        alfn        ! Locality measure.
+    INTEGER, INTENT(IN) :: & 
+        n           ! Number of variables
+    INTEGER, INTENT(INOUT) :: & 
+        nfe, &      ! Number of function evaluations.
+        nge         ! Number of subgradient evaluations.
+    INTEGER, INTENT(OUT) :: &
+        iters, &    ! Null step indicator.
+                    !   0  - Null step.
+                    !   1  - Serious step.
+        iterm       ! Cause of termination:
+                    !   0  - Everything is ok.
+                    !  -3  - Failure in function or subgradient calculations.
+ 
+! Local Scalars
+    REAL(KIND=prec) :: &
+        lin_error, &     ! Linearization error.
+        nu, &            ! Parameter for modified slope.
+        epslk,epsrk, &   ! Line search parameters.
+        thdnorm,epslwk,epsrwk ! Auxiliary scalars.
+ 
+! Intrinsic Functions
+    INTRINSIC MAX,DOT_PRODUCT
+ 
+      
+! Initialization
+    if (t > one) t = one
+ 
+    thdnorm = theta*dnorm
+  
+    IF (theta < one) THEN
+        epslk = epsl
+        epsl  = theta*epsl
+        epsrk = epsr
+        epsr  = theta*epsr
+    END IF
+ 
+    epslwk    = epsl*wk
+    epsrwk    = epsr*wk
+ 
+ 
+! Function and subgradient evaluation at a new point       
+    CALL scsum(n,theta*t,d,xo,x)
+ 
+    CALL myf(n,x,f,iterm)
+    CALL myg(n,x,g,iterm)
+    nfe = nfe + 1
+    nge = nge + 1
+    IF (iterm /= 0) RETURN
+  
+! Directional derivative
+    p = theta*DOT_PRODUCT(g,d)
+        
+! Linearization error and locality measure
+    lin_error = fo - f + p*t
+    nu = MAX((-two*lin_error )/(t*thdnorm)**2 ,zero) + eta
+    alfn = MAX(lin_error + nu/two * (t*thdnorm)**2, zero) ! to prevent numerical instabilities
+ 
+! Serious step
+    IF (f <= fo - t*epslwk) THEN ! Note that we always have t >= tmin
+        iters = 1
+        IF (theta /= one) THEN
+            epsl = epslk
+            epsr = epsrk
+        END IF
+        RETURN
+    END IF
+ 
+! Modified gradient
+    g = g + nu * theta*t*d
+    p = theta*DOT_PRODUCT(g,d)
+ 
+! Null step
+    iters = 0
+    IF (p-alfn < -epsrwk) THEN 
+        PRINT*,'Warning: Null step condition not satisfied.'
+    END IF
+ 
+    IF (theta /= one) THEN
+        epsl = epslk
+        epsr = epsrk
+    END IF
+ 
+END SUBROUTINE select_new_point
+ 
+ 
+ !************************************************************************
+ !*                                                                      *
+ !*     * SUBROUTINE nm_select_new_point *                               *
+ !*                                                                      *
+ !*     Nonmonotone selection of new (auxiliary) point in inexactLMBM.   *
+ !*                                                                      *
+ !************************************************************************
+ 
+SUBROUTINE nm_select_new_point(n,x,g,d,xo,t,fo,f,fold,p,alfn,dnorm,wk,theta,epsl,epsr,&
+    eta,iters,inewnma,nfe,nge,iterm)
+ 
+    USE param, ONLY : zero,half,one,two
+    USE obj_fun, ONLY : &
+        myf,myg        ! Computation of the value and the subgradient of
+                    ! the objective function.
+    USE subpro, ONLY : &
+        scsum       ! Sum of a vector and the scaled vector.
+    USE initslmba, ONLY : &
+        mnma        ! Maximum number of function values used in line search.
+ 
+    IMPLICIT NONE
+ 
+! Array Arguments
+    REAL(KIND=prec), DIMENSION(:), INTENT(IN) :: &
+        d, &        ! Direction vector.
+        xo          ! Previous vector of variables.
+    REAL(KIND=prec), DIMENSION(:), INTENT(INOUT) :: &
+        x, &        ! Vector of variables.
+        fold        ! Old function values.
+    REAL(KIND=prec), DIMENSION(:), INTENT(OUT) :: &
+        g           ! Subgradient of the objective function.
+ 
+! Scalar Arguments
+    REAL(KIND=prec), INTENT(INOUT) :: &
+        epsl,&      ! Linesearch parameter.
+        epsr,&      ! Linesearch parameter.
+        t           ! Stepsize
+    REAL(KIND=prec), INTENT(IN) :: &
+        theta, &    ! Scaling parameter.
+        eta, &      ! Distance measure parameter.
+        fo, &       ! Previous value of the objective function.
+        wk, &       ! Stopping parameter.
+        dnorm       ! Euclidean norm of the direction vector.
+    REAL(KIND=prec), INTENT(OUT) :: &
+        f, &        ! Value of the objective function.
+        p, &        ! Directional derivative.
+        alfn        ! Locality measure.
+    INTEGER, INTENT(IN) :: &
+        n           ! Number of variables
+    INTEGER, INTENT(INOUT) :: &
+        iters, &    ! Null step indicator.
+                    !   0  - Null step.
+                    !   1  - Serious step.
+        inewnma, &  ! Index for array.
+        nfe, &      ! Number of function evaluations.
+        nge         ! Number of subgradient evaluations.
+    INTEGER, INTENT(OUT) :: &
+        iterm       ! Cause of termination:
+                    !   0  - Everything is ok.
+                    !  -3  - Failure in function or subgradient calculations.
+ 
+! Local Scalars
+    REAL(KIND=prec) :: &
+        lin_error, & ! linearization error
+        nu, &       ! Parameter for slope
+        ftmp, &     ! Maximum function value from mnma last iterations.
+        epslk,epsrk, & ! Line search parameters.
+        thdnorm,epslwk,epsrwk ! Auxiliary scalars.
+    INTEGER :: &
+        imax
+ 
+! Intrinsic Functions
+    INTRINSIC ABS,MAX,MAXVAL,DOT_PRODUCT
+ 
+
+! Initialization
+    if (t > one) t = one
+    
+    thdnorm = theta*dnorm
+ 
+    IF (theta < one) THEN
+        epslk = epsl
+        epsl  = theta*epsl
+        epsrk = epsr
+        epsr  = theta*epsr
+    END IF
+ 
+    epslwk    = epsl*wk
+    epsrwk    = epsr*wk
+     
+! Updating array fold
+    IF (iters==1) THEN
+        IF (inewnma < mnma) THEN
+            ! Array is not full yet, add to next position
+            inewnma = inewnma + 1
+            fold(inewnma) = fo
+        ELSE
+            ! Array is full, replace the largest value
+            imax = MAXLOC(fold, 1)
+            fold(imax) = fo
+        END IF
+    END IF
+    ftmp = MAXVAL(fold)
+  
+! Function evaluation at a new point
+    CALL scsum(n,theta*t,d,xo,x)
+ 
+    CALL myf(n,x,f,iterm)
+    CALL myg(n,x,g,iterm)
+    nfe = nfe + 1
+    nge = nge + 1
+    IF (iterm /= 0) RETURN
+ 
+ 
+! Directional derivative
+    p = theta*DOT_PRODUCT(g,d)
+    
+    
+! Linearization error and locality measure     
+    lin_error = fo - f + p*t
+    nu = MAX((-two*lin_error )/(t*thdnorm)**2 ,zero) + eta
+    alfn = MAX(lin_error + nu/two * (t*thdnorm)**2, zero) ! to prevent numerical instabilities
+ 
+ 
+! Serious step
+    IF (f <= ftmp - t*epslwk) THEN ! Note that we always have t >= tmin
+        iters = 1
+        IF (theta /= one) THEN
+            epsl = epslk
+            epsr = epsrk
+        END IF    
+        RETURN
+    END IF
+
+
+! Modified gradient
+    g = g + nu * theta*t*d
+    p = theta*DOT_PRODUCT(g,d)
+ 
+ 
+! Null step
+    iters = 0
+    IF (p-alfn < -epsrwk) THEN
+        PRINT*,'Warning: Null step condition not satisfied.'
+    END IF
+ 
+    IF (theta /= one) THEN
+        epsl = epslk
+        epsr = epsrk
+    END IF
+ 
+ END SUBROUTINE nm_select_new_point
 
 !************************************************************************
 !*                                                                      *
@@ -2271,8 +2501,6 @@ SUBROUTINE dlbfgs(n,mc,mcc,inew,ibfgs,iflag,d,g,gp,s,u,sm,um,rm, &
       
     USE param, ONLY : zero,small,one,half ! half is used at sclpar
     USE subpro, ONLY : &
-        xdiffy, & ! Difference of two vectors.
-        xsumy, &  ! Sum of two vectors.
         scdiff, & ! Difference of the scaled vector and a vector.
         scsum, &  ! Sum of a vector and the scaled vector.
         vxdiag, & ! Multiplication of a vector and a diagonal matrix.
@@ -2590,18 +2818,18 @@ SUBROUTINE dlbfgs(n,mc,mcc,inew,ibfgs,iflag,d,g,gp,s,u,sm,um,rm, &
 
     IF (iold == 1 .OR. ibfgs == 2) THEN
         CALL cwmaxv(n,mcnew,um,tmpmc1,d)
-        CALL xdiffy(n,d,g,d)
+        d = d - g
         CALL cwmaxv(n,mcnew,sm,tmpmc2,tmpn1)
         CALL scdiff(n,gamma,d,tmpn1,d)
     ELSE 
         CALL cwmaxv(n,inew-1,um,tmpmc1,d)
         CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc1(iold:),tmpn1)
-        CALL xsumy(n,d,tmpn1,d)
-        CALL xdiffy(n,d,g,d)
+        d = d + tmpn1
+        d = d - g
         CALL cwmaxv(n,inew-1,sm,tmpmc2,tmpn1)
         CALL scdiff(n,gamma,d,tmpn1,d)
         CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc2(iold:),tmpn1)
-        CALL xdiffy(n,d,tmpn1,d)
+        d = d - tmpn1
     END IF
 
 CONTAINS
@@ -2715,9 +2943,7 @@ SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
     USE param, ONLY : zero,small,one
     USE subpro, ONLY : &
         scalex, & ! Scaling a vector.
-        xdiffy, & ! Difference of two vectors.
         scdiff, & ! Difference of the scaled vector and a vector.
-        xsumy, &  ! Sum of two vectors.
         cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
         rwaxv2, & ! Multiplication of two rowwise stored dense rectangular
                   ! matrices A and B by vectors x and y.
@@ -2942,7 +3168,7 @@ SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
                 CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
                 CALL scdiff(n,-gamma,ga,tmpn1,tmpn2)
                 CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
-                CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+                tmpn2 = tmpn2 + tmpn1
              
             ELSE
                 CALL scalex(mcc,gamma,tmpmc4,tmpmc3)
@@ -2950,12 +3176,12 @@ SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
                 CALL scdiff(n,-gamma,ga,tmpn1,tmpn2)
                 CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),&
                     tmpn1)
-                CALL xdiffy(n,tmpn2,tmpn1,tmpn2)
+                tmpn2 = tmpn2 - tmpn1
                 CALL cwmaxv(n,inew-1,um,tmpmc3,tmpn1)
-                CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+                tmpn2 = tmpn2 + tmpn1
                 CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),&
                     tmpn1)
-                CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+                tmpn2 = tmpn2 + tmpn1
             END IF
           
             a = DOT_PRODUCT(ga,tmpn2)
@@ -3034,7 +3260,7 @@ SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
                 CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc5(iold:),tmpn1)
                 CALL scdiff(n,-gamma,ga,tmpn1,d)
                 CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc6(iold:),tmpn1)
-                CALL xsumy(n,d,tmpn1,d)
+                d = d + tmpn1
          
             ELSE
                 CALL scalex(mcnew+1,gamma,tmpmc5,tmpmc6)
@@ -3042,12 +3268,12 @@ SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
                 CALL scdiff(n,-gamma,ga,tmpn1,d)
                 CALL cwmaxv(n,mcnew-inew,sm((iold-1)*n+1:),tmpmc5(iold:),&
                     tmpn1)
-                CALL xdiffy(n,d,tmpn1,d)
+                d = d - tmpn1
                 CALL cwmaxv(n,inew,um,tmpmc6,tmpn1)
-                CALL xsumy(n,d,tmpn1,d)
+                d = d + tmpn1
                 CALL cwmaxv(n,mcnew-inew,um((iold-1)*n+1:),tmpmc6(iold:),&
                     tmpn1)
-                CALL xsumy(n,d,tmpn1,d)
+                    d = d + tmpn1
             END IF
 
             b = DOT_PRODUCT(ga,d)
@@ -3057,7 +3283,7 @@ SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
 
             IF (b - a < zero) THEN
                 isr1 = 3
-                CALL copy(n,tmpn2,d)
+                d = tmpn2
             
             ELSE
 
@@ -3130,19 +3356,19 @@ SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
         CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
         CALL scdiff(n,-gamma,ga,tmpn1,d)
         CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
-        CALL xsumy(n,d,tmpn1,d)
+        d = d + tmpn1
     ELSE
         CALL scalex(mcc,gamma,tmpmc4,tmpmc3)
         CALL cwmaxv(n,inew-1,sm,tmpmc4,tmpn1)
         CALL scdiff(n,-gamma,ga,tmpn1,d)
         CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),&
             tmpn1)
-        CALL xdiffy(n,d,tmpn1,d)
+        d = d - tmpn1
         CALL cwmaxv(n,inew-1,um,tmpmc3,tmpn1)
-        CALL xsumy(n,d,tmpn1,d)
+        d = d + tmpn1
         CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),&
             tmpn1)
-        CALL xsumy(n,d,tmpn1,d)
+            d = d + tmpn1
     END IF
       
 END SUBROUTINE dlsr1

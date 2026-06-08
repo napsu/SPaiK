@@ -153,7 +153,7 @@ CONTAINS
                 
             rho = f/(REAL(n,prec)**2) !
             rho2 = 1.0_prec*rho !/ (REAL(n,prec))
-            if (ireg == 0) then !double regularization jos myx=0 näitä ei kai tarvita
+            if (ireg == 0) then !double regularization 
                 f = f + rho * sum(abs(myx)) + rho2/2.0_prec * dot_product(myx,p)
 
             else if (ireg == 1) then ! L1-norm
@@ -236,7 +236,7 @@ CONTAINS
                     g(i)=p(i)-y(i)
                 end do
                 call sgvtG(g,g)
-                g = g/REAL(n,prec) ! testi
+                g = g/REAL(n,prec) ! 
             
             CASE(2) ! Hinge loss
                 do i2=1,nbatch
@@ -429,12 +429,6 @@ subroutine sgvt(p,a)
     
         i = r(h2)
         j = s(h2) 
-        !if (h>n) print*,'Something wrong with h in sGVT',h,n
-        !if (i>q) print*,'Something wrong with i in sGVT',i,q
-        !if (j>m) then
-        !    print*,'Something wrong with j in sGVT',j,m
-        !    stop
-        !end if
 
         inner: do k=1,q 
             matM(k,j)=matM(k,j)+ a(h)*matT(k,i) 

@@ -1,11 +1,11 @@
 !*************************************************************************
 !*                                                                       *
 !*     SPaiK    - Scalable Pairwise Kernel Learning Software using       *
-!*                stochastic limited memory bundle algorithm (SLMBA),    *
-!*                stochastic generalized vec trick (sGVT),and kernels    *
-!*                from RLScore (version 0.2)                             *
+!*                stochastic inexact limited memory bundle algorithm     *
+!*                (ISLMBA), stochastic generalized vec trick (sGVT),     *
+!*                and kernels from RLScore (version 0.2)                             *
 !*                                                                       *
-!*     by Napsu Karmitsa 2024 (last modified 22.11.2024).                *
+!*     by Napsu Karmitsa 2026 (last modified 08.02.2026).                *
 !*                                                                       *
 !*     The SPaiK software is covered by the MIT license.                 *
 !*                                                                       *
@@ -25,7 +25,7 @@
 !*                             Includes modules:
 !*                               - initpkl     - Initialization of parameters for learning.
 !*                               - initslmba   - Initialization of SLMBA.
-!*     slmba.f95             - SLMBA - stochastic limited memory bundle algorithm for
+!*     slmba.f95             - SLMBA - stochastic inexact limited memory bundle algorithm for
 !*                             nonsmooth optimization (specially modified for stochpkl).
 !*     objfun.f95            - computation of the function and subgradients values and
 !*                             a stochastic generalized vec trick (SGVT).
@@ -52,10 +52,10 @@
 !*     for SPaiK, sGVT, and SLMBA:
 !*
 !*       N. Karmitsa, T. Pahikkala, A. Airola "Scalable pairwise kernel learning 
-!*       with stochastic vec trick", 2025. 
+!*       with stochastic vec trick", 2026. 
 !*
 !*     for RLScore:
-!*
+!* 
 !*       https://github.com/aatapa/RLScore
 !*
 !*       T. Pahikkala, A. Airola, "Rlscore: Regularized least-squares learners", 
@@ -83,9 +83,10 @@
 !*
 !*     Acknowledgements:
 !*
-!*     The work was financially supported by the Research Council of Finland projects (Project No. #345804
-!*     and #345805) led by Antti Airola and Tapio Pahikkala.
-!*
+!*     The work was financially supported by the Research Council of Finland projects 
+!*     (Projects No. #340182 and #345804 led by Tapio Pahikkala and 
+!*      Projects No. #340140 and #345805 led by Antti Airola).
+!* 
 !*************************************************************************
 !*
 !*     * fmodule spaik *
@@ -158,7 +159,7 @@ CONTAINS
         real(KIND=prec) :: &
             f 
         integer :: &
-            mc, &      ! Initial maximum number of stored corrections for LMBM
+            mc, &          ! Initial maximum number of stored corrections for LMBM
             i
         INTEGER, DIMENSION(4) :: & ! 
             iout           ! Output integer parameters for SLMBA.
@@ -167,23 +168,20 @@ CONTAINS
                            !   iout(3)   Number of used subgradient evaluations
                            !   iout(4)   Cause of termination:
                            !               1  - The problem has been solved
-                           !                    with desired accuracy. OK
+                           !                    with desired accuracy.
                            !               2  - Changes in function values < tolf in mtesf
-                           !                    subsequent iterations. OK
-                           !               3  - Changes in function value <
-                           !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
-                           !                    where small is the smallest positive number
-                           !                    such that 1.0 + small > 1.0. OK
-                           !               4  - Number of function calls > mfe. OK
-                           !               5  - Number of iterations > mit. OK
-                           !               7  - f < tolb. OK
-                           !               8  - f is not changing between batches. OK
+                           !                    subsequent iterations.
+                           !               3  - Unchanging gradient norms in null steps.
+                           !               4  - Number of function calls > mfe. 
+                           !               5  - Number of iterations > mit. 
+                           !               7  - f < tolb. 
+                           !               8  - f is not changing between batches. 
                            !               9  - Successful termination.
-                           !              -1  - Two consecutive restarts. OK
+                           !              -1  - Two consecutive restarts. 
                            !              -2  - Number of restarts > maximum number
-                           !                    of restarts. OK
+                           !                    of restarts. 
                            !              -3  - Failure in function or subgradient
-                           !                    calculations (assigned by the user). OK
+                           !                    calculations
                            !              -4  -
                            !              -5  - Invalid input parameters.
                            !              -6  - Unspecified error.
@@ -237,12 +235,14 @@ CONTAINS
         CALL init_slmbapar() ! Set the maximum number of batches and the number
                              !   of iterations after which the batch is reselected.
 
-        if (h > 0) then      ! After one epoch, validate after each batch.
-            maxbatch = 1
+        !if (h >= 0) then    ! Always... 
+        if (h > 0) then      ! After one epoch... 
+            maxbatch = 1     !     validate after each batch
+            nth = 100        !     and use at most 100 iterations 
         end if
 
         do i=1,m ! for drug (or target)-wise batches
-                batchind(i)=i
+            batchind(i)=i
         end do
 
         if (n <= 0) then
