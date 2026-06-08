@@ -59,8 +59,7 @@ In addition, separate csv-files with predictions under different experimental se
 ## References:
 
 * SPaiK, sGVT, and StoILMBM:
-  - N. Karmitsa, T. Pahikkala, A. Airola, "Scalable Pairwise Kernel Learning 
-       with Stochastic Vec Trick", 2026. 
+  - N. Karmitsa, T. Pahikkala, A. Airola, "Scalable Pairwise Kernel Learning with Stochastic Vec Trick", 2026. 
 * [RLScore](https://github.com/aatapa/RLScore):
   - T. Pahikkala, A. Airola, "[Rlscore: Regularized Least-Squares Learners](https://www.jmlr.org/papers/volume17/16-470/16-470.pdf)", Journal of Machine Learning Research, Vol. 17, No. 221, pp. 1-5, 2016.
 * InexactLMBM, LMBM, and SLMBA:
