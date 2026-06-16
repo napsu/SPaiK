@@ -59,11 +59,11 @@ In addition, separate csv-files with predictions under different experimental se
 ## References:
 
 * SPaiK, sGVT, and StoILMBM:
-  - N. Karmitsa, T. Pahikkala, A. Airola, "Scalable Pairwise Kernel Learning with Stochastic Vec Trick", 2026. 
+  - N. Karmitsa, T. Pahikkala, A. Airola, "[Scalable Pairwise Kernel Learning with Stochastic Vec Trick](https://arxiv.org/abs/2606.16979)", ArXiv2606.16979, 2026. 
 * [RLScore](https://github.com/aatapa/RLScore):
   - T. Pahikkala, A. Airola, "[Rlscore: Regularized Least-Squares Learners](https://www.jmlr.org/papers/volume17/16-470/16-470.pdf)", Journal of Machine Learning Research, Vol. 17, No. 221, pp. 1-5, 2016.
 * InexactLMBM, LMBM, and SLMBA:
-  - J. Lampainen, K. Joki, N. Karmitsa, and M.M. Mäkelä, "[Inexact Limited Memory Bundle Method](https://arxiv.org/abs/2604.08067)", 2026.
+  - J. Lampainen, K. Joki, N. Karmitsa, and M.M. Mäkelä, "[Inexact Limited Memory Bundle Method](https://arxiv.org/abs/2604.08067)", ArXiv 2604.08067, 2026.
   - N. Haarala, K. Miettinen, M.M. Mäkelä, "[Globally Convergent Limited Memory Bundle Method for Large-Scale Nonsmooth Optimization](https://link.springer.com/article/10.1007/s10107-006-0728-2)", Mathematical Programming, Vol. 109, No. 1, pp. 181-205, 2007.
   - M. Haarala, K. Miettinen, M.M. Mäkelä, "[New Limited Memory Bundle Method for Large-Scale Nonsmooth Optimization](https://www.tandfonline.com/doi/abs/10.1080/10556780410001689225)", Optimization Methods and Software, Vol. 19, No. 6, pp. 673-692, 2004.
   - N. Karmitsa, V.-P. Eronen, M.M. Mäkelä, T. Pahikkala, A. Airola, 
